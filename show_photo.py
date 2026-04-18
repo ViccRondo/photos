@@ -29,7 +29,7 @@ except ImportError:
     PHOTO_DIR = "/home/pi/photos"
     REFRESH_INTERVAL = 900
     IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.bmp', '.gif'}
-    LOG_FILE = "/var/log/photopainter.log"
+    LOG_FILE = "photopainter.log"
 
 # 屏幕分辨率
 DISP_WIDTH = 800
@@ -42,16 +42,32 @@ sys.path.insert(0, DRIVER_DIR)
 
 def setup_logging():
     """配置日志"""
-    log_dir = os.path.dirname(LOG_FILE)
-    if log_dir:
-        os.makedirs(log_dir, exist_ok=True)
+    log_path = Path(LOG_FILE)
+    if not log_path.is_absolute():
+        log_path = Path.cwd() / log_path
+
+    if log_path.parent:
+        os.makedirs(log_path.parent, exist_ok=True)
+
+    handlers = [logging.StreamHandler()]
+    try:
+        handlers.insert(0, logging.FileHandler(log_path, encoding='utf-8'))
+    except OSError as e:
+        fallback_path = Path.cwd() / "photopainter.log"
+        handlers.insert(0, logging.FileHandler(fallback_path, encoding='utf-8'))
+        logging.basicConfig(
+            level=logging.INFO,
+            format='%(asctime)s [%(levelname)s] %(message)s',
+            handlers=handlers
+        )
+        logger = logging.getLogger(__name__)
+        logger.warning(f"日志文件不可写，已回退到: {fallback_path} ({e})")
+        return logger
+
     logging.basicConfig(
         level=logging.INFO,
         format='%(asctime)s [%(levelname)s] %(message)s',
-        handlers=[
-            logging.FileHandler(LOG_FILE),
-            logging.StreamHandler()
-        ]
+        handlers=handlers
     )
     return logging.getLogger(__name__)
 

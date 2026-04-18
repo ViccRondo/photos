@@ -15,5 +15,5 @@ REFRESH_INTERVAL = 900
 # 支持的图片格式
 IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.bmp', '.gif', '.webp'}
 
-# 日志文件
-LOG_FILE = "/var/log/photopainter.log"
+# 日志文件（默认写到当前工作目录，避免 /var/log 权限问题）
+LOG_FILE = "photopainter.log"

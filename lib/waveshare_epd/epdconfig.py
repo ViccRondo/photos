@@ -51,13 +51,23 @@ class RaspberryPi:
     def __init__(self):
         import spidev
         import gpiozero
+        from gpiozero import Device
         
         self.SPI = spidev.SpiDev()
         self.GPIO_RST_PIN    = gpiozero.LED(self.RST_PIN)
         self.GPIO_DC_PIN     = gpiozero.LED(self.DC_PIN)
         # self.GPIO_CS_PIN     = gpiozero.LED(self.CS_PIN)
         self.GPIO_PWR_PIN    = gpiozero.LED(self.PWR_PIN)
-        self.GPIO_BUSY_PIN   = gpiozero.Button(self.BUSY_PIN, pull_up = False)
+        # Button() 会启用 edge detect；在部分新系统/驱动组合下可能报
+        # "Failed to add edge detection"。这里改为直接读取 pin state，避免中断依赖。
+        busy_pin = Device.pin_factory.pin(self.BUSY_PIN)
+        busy_pin.function = 'input'
+        try:
+            busy_pin.pull = 'down'
+        except Exception:
+            # 某些 pin factory 不支持设置 pull，保持默认配置即可
+            pass
+        self.GPIO_BUSY_PIN = busy_pin
 
         
 
@@ -85,7 +95,7 @@ class RaspberryPi:
 
     def digital_read(self, pin):
         if pin == self.BUSY_PIN:
-            return self.GPIO_BUSY_PIN.value
+            return int(self.GPIO_BUSY_PIN.state)
         elif pin == self.RST_PIN:
             return self.RST_PIN.value
         elif pin == self.DC_PIN:
@@ -159,7 +169,8 @@ class RaspberryPi:
             self.GPIO_DC_PIN.close()
             # self.GPIO_CS_PIN.close()
             self.GPIO_PWR_PIN.close()
-            self.GPIO_BUSY_PIN.close()
+            if hasattr(self.GPIO_BUSY_PIN, "close"):
+                self.GPIO_BUSY_PIN.close()
 
         
 
