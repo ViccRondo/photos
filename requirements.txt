@@ -1,14 +1,12 @@
 # Python 依赖
-# 运行 install.sh 会自动安装所有依赖
-# 或者手动: pip3 install RPi.GPIO spidev gpiozero Pillow
+# 运行 install.sh 会自动安装：
+# 1) apt 系统包：python3-opencv、python3-pil
+# 2) venv pip 包：RPi.GPIO、spidev、gpiozero
 
 # 核心依赖
 gpiozero>=2.0
 spidev>=3.5
 RPi.GPIO>=0.7
-Pillow>=9.0
 
-# 可选（推荐安装，提供智能裁剪）
-# pip3 install opencv-python-headless
-opencv-python-headless>=4.5
-opencv-contrib-python-headless>=4.5
+# OpenCV / Pillow 建议使用系统包安装，避免树莓派上反复下载大文件 wheel：
+# sudo apt install -y python3-opencv python3-pil
