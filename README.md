@@ -1,119 +1,149 @@
-# PhotoPainter 墨水屏电子相框
+# PhotoPainter 🖼️
 
-Raspberry Pi Zero W + Waveshare 7.3" 三色墨水屏驱动脚本。
+Waveshare 7.3" 六色墨水屏电子相框驱动，支持 NAS 图片随机展示。
 
-## 功能
+**分辨率**: 800 × 480（黑、白、绿、蓝、红、黄六色）
 
-- 从指定目录（含子文件夹）随机选择照片展示
-- 支持两种运行模式：单次 / 守护进程
-- 适配 epd7in3e 墨水屏
+---
 
-## 安装
+## 快速开始
 
-### 1. 安装系统依赖
+### 1. 安装（一键，在树莓派上运行一次）
 
 ```bash
-# Raspberry Pi OS
-sudo apt update
-sudo apt install -y python3-pip python3-pil
-
-# 安装墨水屏驱动（参考 Waveshare 官方）
-cd ~
-git clone https://github.com/waveshare/e-Paper
-cd e-Paper/RaspberryPi\&JetsonNano/python
-sudo python3 install -e .
+git clone https://github.com/ViccRondo/photos.git
+cd photos
+chmod +x install.sh
+./install.sh
 ```
 
-### 2. 配置图片目录
+> ⚠️ 如果 SPI 未启用，按提示运行 `sudo raspi-config → Interface Options → SPI → Enable`，然后重启。
 
-编辑 `config.py`，修改 `PHOTO_DIR` 为你的 NAS 挂载路径：
+### 2. 配置
+
+编辑 `config.py`，修改图片目录：
 
 ```python
-PHOTO_DIR = "/home/pi/photos"  # 或 NAS 挂载路径
+PHOTO_DIR = "/mnt/nas/photos"  # NAS 挂载路径，或本地目录
 ```
 
-### 3. 安装依赖
+### 3. 运行
 
 ```bash
-pip3 install -r requirements.txt
-```
-
-## 使用方法
-
-### 单次展示
-
-```bash
+# 单次展示（自动选一张随机图片）
 python3 show_photo.py
+
+# 守护进程模式（每15分钟自动换图）
+python3 show_photo.py --daemon
+
+# 指定刷新间隔（5分钟 = 300秒）
+python3 show_photo.py --daemon --interval 300
+
+# 模拟模式（无屏幕时测试图片处理）
+python3 show_photo.py --simulate
 ```
 
-### 指定目录
+---
+
+## 开机自启（systemd）
 
 ```bash
-python3 show_photo.py --dir /path/to/your/photos
+# 创建服务
+sudo nano /etc/systemd/system/photopainter.service
 ```
 
-### 守护进程模式（推荐）
+写入以下内容：
 
-后台持续运行，每 15 分钟自动更换图片：
+```ini
+[Unit]
+Description=PhotoPainter e-Paper Photo Frame
+After=network-online.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/photos
+ExecStart=/usr/bin/python3 /home/pi/photos/show_photo.py --daemon --interval 900
+Restart=on-failure
+RestartSec=60
+
+[Install]
+WantedBy=multi-user.target
+```
+
+启用服务：
 
 ```bash
-nohup python3 show_photo.py --daemon &
+sudo systemctl daemon-reload
+sudo systemctl enable photopainter
+sudo systemctl start photopainter
 ```
 
-### Cron 定时任务
+查看状态：
 
 ```bash
-# 编辑 crontab
-crontab -e
-
-# 添加定时任务（每15分钟执行一次）
-*/15 * * * * /usr/bin/python3 /home/pi/photos/show_photo.py >> /var/log/photopainter.log 2>&1
+sudo systemctl status photopainter
+tail -f /var/log/photopainter.log
 ```
 
-## NAS 挂载建议
+---
 
-推荐使用 SMB/CIFS 挂载 NAS 图片目录：
+## NAS 挂载
+
+推荐使用 SMB/CIFS 挂载：
 
 ```bash
 # 安装 cifs-utils
 sudo apt install -y cifs-utils
 
-# 挂载 NAS
-sudo mount -t cifs //NAS_IP/Photos /mnt/nas/Photos -o username=xxx,password=xxx,uid=1000,gid=1000
+# 创建挂载点
+sudo mkdir -p /mnt/nas
 
-# 启动时自动挂载（添加到 /etc/fstab）
-//NAS_IP/Photos /mnt/nas/Photos cifs username=xxx,password=xxx,uid=1000,gid=1000 0 0
+# 挂载（按实际情况修改）
+sudo mount -t cifs //NAS_IP/Photos /mnt/nas -o username=xxx,password=xxx,uid=1000,gid=1000
+
+# 开机自动挂载（/etc/fstab）
+//NAS_IP/Photos /mnt/nas cifs username=xxx,password=xxx,uid=1000,gid=1000 0 0
 ```
 
-## 日志
+---
 
-日志文件位置：`/var/log/photopainter.log`
+## 图片要求
 
-```bash
-# 查看日志
-tail -f /var/log/photopainter.log
-```
+- 支持格式：JPG、PNG、BMP、GIF、WebP
+- 支持子文件夹（会自动递归搜索）
+- 脚本会自动缩放/裁剪到 800×480
+- 建议图片分辨率 ≥ 800×480 以获得最佳效果
 
-## 配置
-
-编辑 `config.py` 修改以下参数：
-
-| 参数 | 默认值 | 说明 |
-|------|--------|------|
-| PHOTO_DIR | /home/pi/photos | 图片目录 |
-| REFRESH_INTERVAL | 900 | 刷新间隔（秒） |
-| LOG_FILE | /var/log/photopainter.log | 日志文件 |
+---
 
 ## 目录结构
 
 ```
 photos/
-├── show_photo.py      # 主程序
-├── config.py          # 配置文件
-├── requirements.txt   # Python 依赖
-└── README.md          # 说明文档
+├── show_photo.py       # 主程序
+├── config.py           # 配置文件
+├── install.sh          # 一键安装脚本
+├── requirements.txt    # Python 依赖
+├── lib/
+│   └── waveshare_epd/  # 官方墨水屏驱动（MIT 协议）
+│       ├── epd7in3e.py
+│       └── epdconfig.py
+└── README.md
 ```
 
-## 作者
+---
 
-花火 🎭
+## 常见问题
+
+**Q: 显示异常/偏色？**
+A: 六色墨水屏刷新会有残影，首次全刷建议断电静置 30 秒。
+
+**Q: 报 SPI 错误？**
+A: 运行 `sudo raspi-config` 启用 SPI 后重启。
+
+**Q: 图片方向不对？**
+A: 脚本会自动检测并旋转 90°，但建议原始图片宽>高。
+
+**Q: 如何停止守护进程？**
+A: `pkill -f show_photo.py` 或 `sudo systemctl stop photopainter`
