@@ -42,7 +42,9 @@ sys.path.insert(0, DRIVER_DIR)
 
 def setup_logging():
     """配置日志"""
-    os.makedirs(os.path.dirname(LOG_FILE) if os.path.dirname(LOG_FILE), exist_ok=True)
+    log_dir = os.path.dirname(LOG_FILE)
+    if log_dir:
+        os.makedirs(log_dir, exist_ok=True)
     logging.basicConfig(
         level=logging.INFO,
         format='%(asctime)s [%(levelname)s] %(message)s',
