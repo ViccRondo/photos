@@ -19,6 +19,8 @@ chmod +x install.sh
 
 > ⚠️ 如果 SPI 未启用，按提示运行 `sudo raspi-config → Interface Options → SPI → Enable`，然后重启。
 
+> ℹ️ 安装脚本会自动创建 `.venv` 虚拟环境，避免 Debian/Ubuntu 的 `externally-managed-environment`（PEP 668）限制。
+
 ### 2. 配置
 
 编辑 `config.py`，修改图片目录：
@@ -31,16 +33,16 @@ PHOTO_DIR = "/mnt/nas/photos"  # NAS 挂载路径，或本地目录
 
 ```bash
 # 单次展示（自动选一张随机图片）
-python3 show_photo.py
+./.venv/bin/python show_photo.py
 
 # 守护进程模式（每15分钟自动换图）
-python3 show_photo.py --daemon
+./.venv/bin/python show_photo.py --daemon
 
 # 指定刷新间隔（5分钟 = 300秒）
-python3 show_photo.py --daemon --interval 300
+./.venv/bin/python show_photo.py --daemon --interval 300
 
 # 模拟模式（无屏幕时测试图片处理）
-python3 show_photo.py --simulate
+./.venv/bin/python show_photo.py --simulate
 ```
 
 ---
@@ -63,7 +65,7 @@ After=network-online.target
 Type=simple
 User=pi
 WorkingDirectory=/home/pi/photos
-ExecStart=/usr/bin/python3 /home/pi/photos/show_photo.py --daemon --interval 900
+ExecStart=/home/pi/photos/.venv/bin/python /home/pi/photos/show_photo.py --daemon --interval 900
 Restart=on-failure
 RestartSec=60
 
