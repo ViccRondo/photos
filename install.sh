@@ -42,8 +42,18 @@ if [ ! -d "${VENV_DIR}" ]; then
     python3 -m venv "${VENV_DIR}"
 fi
 
-"${VENV_DIR}/bin/pip" install --upgrade pip -q
-"${VENV_DIR}/bin/pip" install RPi.GPIO spidev gpiozero Pillow opencv-python-headless opencv-contrib-python-headless -q
+echo "  - 升级 pip（会显示下载/安装进度）..."
+"${VENV_DIR}/bin/pip" install --upgrade pip --progress-bar on
+
+echo "  - 安装 Python 依赖（首次安装可能需要几分钟）..."
+"${VENV_DIR}/bin/pip" install \
+    RPi.GPIO \
+    spidev \
+    gpiozero \
+    Pillow \
+    opencv-python-headless \
+    opencv-contrib-python-headless \
+    --progress-bar on
 
 echo ""
 echo "[4/4] 检查 SPI 状态..."
