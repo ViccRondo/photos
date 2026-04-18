@@ -19,7 +19,7 @@ chmod +x install.sh
 
 > ⚠️ 如果 SPI 未启用，按提示运行 `sudo raspi-config → Interface Options → SPI → Enable`，然后重启。
 
-> ℹ️ 安装脚本会把虚拟环境创建在项目目录外（默认 `~/.venvs/photopainter`），并在项目内生成 `.venv` 软链接。这样即使你删库重拉，已安装环境也能复用。
+> ℹ️ 安装脚本会把虚拟环境创建在项目目录外（默认 `~/.venvs/photopainter`），并在项目内生成 `.venv` 软链接。这样即使你删库重拉，已安装环境也能复用。虚拟环境会使用 `--system-site-packages`，可直接复用系统安装的 `python3-opencv` / `python3-pil`，避免反复下载大体积 wheel。
 >
 > 如需自定义虚拟环境路径，可在安装前设置：
 > `export PHOTOPAINTER_VENV_DIR=/your/path/venv`
@@ -35,6 +35,11 @@ PHOTO_DIR = "/mnt/nas/photos"  # NAS 挂载路径，或本地目录
 ### 3. 运行
 
 ```bash
+# 可选：先确认系统包在 venv 中可见
+source .venv/bin/activate
+python -c "import cv2; print(cv2.__version__)"
+python -c "from PIL import Image; print('PIL OK')"
+
 # 单次展示（自动选一张随机图片）
 ./.venv/bin/python show_photo.py
 

@@ -39,11 +39,11 @@ sudo apt-get install -y \
     libfreetype6-dev
 
 echo ""
-echo "[3/4] 安装 Python 包（使用虚拟环境，避免 PEP 668 限制）..."
+echo "[3/4] 准备 Python 虚拟环境（共享系统包，避免重复下载大型 wheel）..."
 if [ ! -d "${VENV_DIR}" ]; then
     echo "  - 创建虚拟环境: ${VENV_DIR}"
     mkdir -p "$(dirname "${VENV_DIR}")"
-    python3 -m venv "${VENV_DIR}"
+    python3 -m venv --system-site-packages "${VENV_DIR}"
 else
     echo "  - 复用已有虚拟环境: ${VENV_DIR}"
 fi
@@ -54,18 +54,16 @@ if [ -e "${SCRIPT_DIR}/.venv" ] || [ -L "${SCRIPT_DIR}/.venv" ]; then
 fi
 ln -s "${VENV_DIR}" "${SCRIPT_DIR}/.venv"
 
-echo "  - 升级 pip（会显示下载/安装进度）..."
-"${VENV_DIR}/bin/pip" install --upgrade pip --progress-bar on
-
-echo "  - 安装 Python 依赖（首次安装可能需要几分钟）..."
+echo "  - 安装 Python 依赖（仅安装系统仓库没有的 GPIO 相关包）..."
 "${VENV_DIR}/bin/pip" install \
     RPi.GPIO \
     spidev \
     gpiozero \
-    Pillow \
-    opencv-python-headless \
-    opencv-contrib-python-headless \
     --progress-bar on
+
+echo "  - 验证系统包可见性..."
+"${VENV_DIR}/bin/python" -c "import cv2; print('cv2 OK:', cv2.__version__)"
+"${VENV_DIR}/bin/python" -c "from PIL import Image; print('PIL OK')"
 
 echo ""
 echo "[4/4] 检查 SPI 状态..."

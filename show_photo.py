@@ -250,14 +250,13 @@ def install_dependencies(logger):
     logger.info("开始安装系统依赖...")
 
     commands = [
-        # 系统包
         ["sudo", "apt-get", "update"],
-        ["sudo", "apt-get", "install", "-y", "python3-pip python3-pil python3-opencv",
-         "libopencv-core-dev libopencv-highgui-dev python3-dev gcc",
-         "git", "libjpeg-dev", "zlib1g-dev", "libpng-dev"],
-        # Python 包
-        ["pip3", "install", "--upgrade", "pip"],
-        ["pip3", "install", "RPi.GPIO", "spidev", "gpiozero", "Pillow", "opencv-python-headless", "opencv-contrib-python-headless"],
+        ["sudo", "apt-get", "install", "-y",
+         "python3-pil",
+         "python3-opencv",
+         "python3-gpiozero",
+         "python3-spidev",
+         "python3-rpi.gpio"],
     ]
 
     for cmd in commands:
@@ -273,7 +272,7 @@ def install_dependencies(logger):
     else:
         logger.warning("⚠ SPI 可能未启用，请运行: sudo raspi-config → Interface Options → SPI → Enable")
 
-    logger.info("安装完成！现在可以运行 python3 show_photo.py")
+    logger.info("安装完成！建议用 --system-site-packages 创建 venv 后再运行。")
     return True
 
 
