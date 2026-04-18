@@ -43,7 +43,7 @@ if [ ! -d "${VENV_DIR}" ]; then
 fi
 
 "${VENV_DIR}/bin/pip" install --upgrade pip -q
-"${VENV_DIR}/bin/pip" install RPi.GPIO spidev gpiozero Pillow -q
+"${VENV_DIR}/bin/pip" install RPi.GPIO spidev gpiozero Pillow opencv-python-headless opencv-contrib-python-headless -q
 
 echo ""
 echo "[4/4] 检查 SPI 状态..."
