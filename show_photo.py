@@ -196,8 +196,7 @@ def display_image(image, logger, simulate: bool = False) -> bool:
         epd.init()
         logger.info("墨水屏初始化完成")
 
-        # 处理图片（优先用 OpenCV）
-        import cv2
+        # 处理图片（优先用 OpenCV，不可用时自动回退 PIL）
         if isinstance(image, str):
             proc_img = process_image_opencv(image, logger)
             if proc_img is None:
@@ -209,10 +208,9 @@ def display_image(image, logger, simulate: bool = False) -> bool:
             logger.error("图片处理失败")
             return False
 
-        # OpenCV BGR → RGB
-        if isinstance(proc_img, type(None).__class__) is not None and hasattr(proc_img, 'shape'):
-            import cv2
-            proc_img = cv2.cvtColor(proc_img, cv2.COLOR_BGR2RGB)
+        # OpenCV ndarray (BGR) → RGB；PIL 图像直接使用
+        if hasattr(proc_img, 'shape') and hasattr(proc_img, '__getitem__'):
+            proc_img = proc_img[:, :, ::-1]
 
         from PIL import Image as PILImage
         if not isinstance(proc_img, PILImage.Image):
