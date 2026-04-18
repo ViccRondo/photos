@@ -19,7 +19,10 @@ chmod +x install.sh
 
 > ⚠️ 如果 SPI 未启用，按提示运行 `sudo raspi-config → Interface Options → SPI → Enable`，然后重启。
 
-> ℹ️ 安装脚本会自动创建 `.venv` 虚拟环境，避免 Debian/Ubuntu 的 `externally-managed-environment`（PEP 668）限制。
+> ℹ️ 安装脚本会把虚拟环境创建在项目目录外（默认 `~/.venvs/photopainter`），并在项目内生成 `.venv` 软链接。这样即使你删库重拉，已安装环境也能复用。
+>
+> 如需自定义虚拟环境路径，可在安装前设置：
+> `export PHOTOPAINTER_VENV_DIR=/your/path/venv`
 
 ### 2. 配置
 
@@ -133,6 +136,8 @@ photos/
 │       └── epdconfig.py
 └── README.md
 ```
+
+其中 `.venv` 是一个软链接，指向项目外的真实虚拟环境目录（默认 `~/.venvs/photopainter`）。
 
 ---
 
