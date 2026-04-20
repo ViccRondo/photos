@@ -91,14 +91,14 @@ def select_random_photo(directory: str) -> str | None:
 
 
 def process_image_opencv(image_path: str, logger) -> any:
-    """使用 OpenCV + 智能裁剪处理图片（高质量）"""
+    """使用 OpenCV 处理图片（横图缩放，竖图旋转后缩放，不裁剪）"""
     try:
         import cv2
         import numpy as np
     except ImportError:
         return None
 
-    logger.info("使用 OpenCV 智能裁剪...")
+    logger.info("使用 OpenCV 缩放适配...")
     image = cv2.imread(image_path)
     if image is None:
         return None
@@ -106,41 +106,39 @@ def process_image_opencv(image_path: str, logger) -> any:
     img_h, img_w = image.shape[:2]
     logger.info(f"原始图片分辨率: {img_w} x {img_h}")
 
-    # 检查是否需要旋转
-    if img_w == DISP_HEIGHT and img_h == DISP_WIDTH:
-        image = cv2.rotate(image, cv2.ROTATE_90_COUNTERCLOCKWISE)
-        logger.info("图片已旋转 90°")
+    # 竖图顺时针旋转 90°，横图保持不变
+    if img_h > img_w:
+        image = cv2.rotate(image, cv2.ROTATE_90_CLOCKWISE)
+        logger.info("检测到竖图，已顺时针旋转 90°")
         img_h, img_w = image.shape[:2]
-
-    img_aspect = img_w / img_h
-    disp_aspect = DISP_WIDTH / DISP_HEIGHT
-
-    # 等比缩放
-    if img_aspect < disp_aspect:
-        resize = (DISP_WIDTH, int(DISP_WIDTH / img_aspect))
     else:
-        resize = (int(DISP_HEIGHT * img_aspect), DISP_HEIGHT)
+        logger.info("检测到横图，直接缩放")
 
-    image = cv2.resize(image, resize)
-    img_h, img_w = image.shape[:2]
+    # 等比缩放到屏幕范围内（不裁剪）
+    scale = min(DISP_WIDTH / img_w, DISP_HEIGHT / img_h)
+    new_w = max(1, int(img_w * scale))
+    new_h = max(1, int(img_h * scale))
+    image = cv2.resize(image, (new_w, new_h), interpolation=cv2.INTER_AREA)
 
-    # 中心裁剪
-    x_off = max(0, (img_w - DISP_WIDTH) // 2)
-    y_off = max(0, (img_h - DISP_HEIGHT) // 2)
-    image = image[y_off:y_off + DISP_HEIGHT, x_off:x_off + DISP_WIDTH]
+    # 居中贴到白色背景
+    canvas = np.full((DISP_HEIGHT, DISP_WIDTH, 3), 255, dtype=np.uint8)
+    x_off = (DISP_WIDTH - new_w) // 2
+    y_off = (DISP_HEIGHT - new_h) // 2
+    canvas[y_off:y_off + new_h, x_off:x_off + new_w] = image
+    image = canvas
 
     logger.info(f"处理后分辨率: {image.shape[1]} x {image.shape[0]}")
     return image
 
 
 def process_image_pil(image_path: str, logger) -> any:
-    """使用 PIL 简单缩放处理图片（无 OpenCV 时备用）"""
+    """使用 PIL 处理图片（横图缩放，竖图旋转后缩放，不裁剪）"""
     try:
         from PIL import Image
     except ImportError:
         return None
 
-    logger.info("使用 PIL 缩放...")
+    logger.info("使用 PIL 缩放适配...")
     img = Image.open(image_path)
     logger.info(f"原始图片分辨率: {img.size}")
 
@@ -148,31 +146,27 @@ def process_image_pil(image_path: str, logger) -> any:
     if img.mode != 'RGB':
         img = img.convert('RGB')
 
-    # 检查是否需要旋转
+    # 竖图顺时针旋转 90°，横图保持不变
     w, h = img.size
-    if w == DISP_HEIGHT and h == DISP_WIDTH:
+    if h > w:
         img = img.rotate(90, expand=True)
-        logger.info("图片已旋转 90°")
+        logger.info("检测到竖图，已顺时针旋转 90°")
         w, h = img.size
-
-    # 等比缩放 + 中心裁剪
-    disp_aspect = DISP_WIDTH / DISP_HEIGHT
-    img_aspect = w / h
-
-    if img_aspect < disp_aspect:
-        new_w = int(h * disp_aspect)
-        new_h = h
-        x_off = (w - new_w) // 2
-        y_off = 0
-        img = img.resize((new_w, new_h), Image.Resampling.LANCZOS)
-        img = img.crop((x_off, y_off, x_off + DISP_WIDTH, y_off + DISP_HEIGHT))
     else:
-        new_w = w
-        new_h = int(w / disp_aspect)
-        x_off = 0
-        y_off = (h - new_h) // 2
-        img = img.resize((new_w, new_h), Image.Resampling.LANCZOS)
-        img = img.crop((x_off, y_off, x_off + DISP_WIDTH, y_off + DISP_HEIGHT))
+        logger.info("检测到横图，直接缩放")
+
+    # 等比缩放到屏幕范围内（不裁剪）
+    scale = min(DISP_WIDTH / w, DISP_HEIGHT / h)
+    new_w = max(1, int(w * scale))
+    new_h = max(1, int(h * scale))
+    img = img.resize((new_w, new_h), Image.Resampling.LANCZOS)
+
+    # 居中贴到白色背景
+    canvas = Image.new("RGB", (DISP_WIDTH, DISP_HEIGHT), "white")
+    x_off = (DISP_WIDTH - new_w) // 2
+    y_off = (DISP_HEIGHT - new_h) // 2
+    canvas.paste(img, (x_off, y_off))
+    img = canvas
 
     logger.info(f"处理后分辨率: {img.size}")
     return img
