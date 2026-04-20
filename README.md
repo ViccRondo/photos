@@ -155,7 +155,7 @@ A: 六色墨水屏刷新会有残影，首次全刷建议断电静置 30 秒。
 A: 运行 `sudo raspi-config` 启用 SPI 后重启。
 
 **Q: 图片方向不对？**
-A: 脚本会自动检测并旋转 90°，但建议原始图片宽>高。
+A: 当前版本会在输出前整体旋转 180°，并对竖图自动旋转 90° 后再适配。
 
 **Q: 如何停止守护进程？**
 A: `pkill -f show_photo.py` 或 `sudo systemctl stop photopainter`

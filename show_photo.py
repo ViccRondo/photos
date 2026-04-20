@@ -212,6 +212,10 @@ def display_image(image, logger, simulate: bool = False) -> bool:
         if not isinstance(proc_img, PILImage.Image):
             proc_img = PILImage.fromarray(proc_img)
 
+        # 屏幕安装方向修正：整体旋转 180°
+        proc_img = proc_img.rotate(180, expand=True)
+        logger.info("已将图片整体旋转 180°")
+
         logger.info("刷新屏幕...")
         epd.display(epd.getbuffer(proc_img))
         time.sleep(1)
